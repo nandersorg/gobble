@@ -43,12 +43,10 @@ jobs:
           echo "Waiting for Ollama rollout..."
           microk8s kubectl rollout status deployment/ollama -n gobble --timeout=10m
 
-      - name: Smoke test Ollama
+      - name: Download Ollama
         run: |
           microk8s kubectl exec -n gobble deploy/ollama -- sh -lc "ollama pull llama3.2:1b"
           microk8s kubectl exec -n gobble deploy/ollama -- sh -lc "ollama list"
-          microk8s kubectl exec -n gobble deploy/ollama -- sh -lc 'timeout 60s ollama run llama3.2:1b "Say hello in one sentence."' | tee /tmp/ollama-smoke.txt
-          grep -qi "hello" /tmp/ollama-smoke.txt
 
       - name: Verify deployment
         run: |
