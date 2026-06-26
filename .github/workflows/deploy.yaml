@@ -12,13 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create/update Kubernetes secrets
-        run: |
-          microk8s kubectl create secret generic gobble-secrets \
-            --from-literal=ollama_host='${{ secrets.OLLAMA_HOST }}' \
-            -n gobble \
-            --dry-run=client -o yaml | microk8s kubectl apply -f -
-
       - name: Ensure namespace and storage class
         run: |
           microk8s kubectl apply -f k8s/namespace.yaml
@@ -26,6 +19,13 @@ jobs:
             echo "MicroK8s hostpath storage class is not available";
             exit 1;
           }
+
+      - name: Create/update Kubernetes secrets
+        run: |
+          microk8s kubectl create secret generic gobble-secrets \
+            --from-literal=ollama_host='${{ secrets.OLLAMA_HOST }}' \
+            -n gobble \
+            --dry-run=client -o yaml | microk8s kubectl apply -f -
 
       - name: Apply Kubernetes manifests
         run: |
