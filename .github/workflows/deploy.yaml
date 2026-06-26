@@ -27,14 +27,20 @@ jobs:
             -n gobble \
             --dry-run=client -o yaml | microk8s kubectl apply -f -
 
-      - name: Apply Kubernetes manifests
+      - name: Apply PVC and Ollama manifests
         run: |
           microk8s kubectl apply -f k8s/pvc.yaml
           microk8s kubectl apply -f k8s/ollama.yaml
 
-      - name: Wait for deployment
+      - name: Wait for PVC and Ollama rollout
         run: |
-          microk8s kubectl wait --for=condition=bound pvc/gobble-models-pvc -n gobble --timeout=5m
+          echo "Waiting for PVC to bind..."
+          microk8s kubectl get pvc gobble-models-pvc -n gobble -o wide
+          microk8s kubectl wait --for=jsonpath='{.status.phase}'=Bound pvc/gobble-models-pvc -n gobble --timeout=5m || {
+            microk8s kubectl describe pvc gobble-models-pvc -n gobble || true
+            exit 1
+          }
+          echo "Waiting for Ollama rollout..."
           microk8s kubectl rollout status deployment/ollama -n gobble --timeout=10m
 
       - name: Smoke test Ollama
