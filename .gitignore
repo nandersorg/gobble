@@ -1,0 +1,8 @@
+# Local data and secrets
+models/
+.env
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
