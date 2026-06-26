@@ -1,0 +1,49 @@
+name: Deploy to MicroK8s
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create/update Kubernetes secrets
+        run: |
+          microk8s kubectl create secret generic gobble-secrets \
+            --from-literal=ollama_host='${{ secrets.OLLAMA_HOST }}' \
+            -n gobble \
+            --dry-run=client -o yaml | microk8s kubectl apply -f -
+
+      - name: Ensure namespace and storage class
+        run: |
+          microk8s kubectl apply -f k8s/namespace.yaml
+          microk8s kubectl get storageclass microk8s-hostpath >/dev/null 2>&1 || {
+            echo "MicroK8s hostpath storage class is not available";
+            exit 1;
+          }
+
+      - name: Apply Kubernetes manifests
+        run: |
+          microk8s kubectl apply -f k8s/ollama.yaml
+
+      - name: Wait for deployment
+        run: |
+          microk8s kubectl wait --for=condition=bound pvc/gobble-models-pvc -n gobble --timeout=5m
+          microk8s kubectl rollout status deployment/ollama -n gobble --timeout=10m
+
+      - name: Smoke test Ollama
+        run: |
+          microk8s kubectl exec -n gobble deploy/ollama -- sh -lc "ollama pull llama3.2:1b"
+          microk8s kubectl exec -n gobble deploy/ollama -- sh -lc "ollama list"
+          microk8s kubectl exec -n gobble deploy/ollama -- sh -lc 'timeout 60s ollama run llama3.2:1b "Say hello in one sentence."' | tee /tmp/ollama-smoke.txt
+          grep -qi "hello" /tmp/ollama-smoke.txt
+
+      - name: Verify deployment
+        run: |
+          echo "Deployment status:"
+          microk8s kubectl get pods -n gobble
+          microk8s kubectl get svc -n gobble
