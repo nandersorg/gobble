@@ -29,6 +29,7 @@ jobs:
 
       - name: Apply Kubernetes manifests
         run: |
+          microk8s kubectl apply -f k8s/pvc.yaml
           microk8s kubectl apply -f k8s/ollama.yaml
 
       - name: Wait for deployment
