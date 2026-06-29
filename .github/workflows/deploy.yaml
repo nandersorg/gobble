@@ -43,10 +43,22 @@ jobs:
           echo "Waiting for Ollama rollout..."
           microk8s kubectl rollout status deployment/ollama -n gobble --timeout=10m
 
-      - name: Download Ollama
+      - name: Start Port-Forward to Ollama
         run: |
-          microk8s kubectl exec -n gobble deploy/ollama -- sh -lc "ollama pull gemma2:2b"
-          microk8s kubectl exec -n gobble deploy/ollama -- sh -lc "ollama list"
+          echo "Opening port-forward to Ollama service..."
+          microk8s kubectl port-forward -n gobble svc/ollama-lb 11434:11434 &
+          # Wacht even 3 seconden tot de tunnel daadwerkelijk up-and-running is
+          sleep 3
+
+      - name: Pull Gemma 2 Model via Local Curl
+        run: |
+          echo "Triggering model download..."
+          curl -X POST http://localhost:11434/api/pull -d '{"name": "gemma2:2b"}'
+          echo "Model pull command completed."
+
+      - name: Verify Loaded Models
+        run: |
+          curl http://localhost:11434/api/tags
 
       - name: Verify deployment
         run: |
