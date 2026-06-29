@@ -45,7 +45,7 @@ jobs:
 
       - name: Download Ollama
         run: |
-          microk8s kubectl exec -n gobble deploy/ollama -- sh -lc "ollama pull llama3.2:1b"
+          microk8s kubectl exec -n gobble deploy/ollama -- sh -lc "ollama pull gemma2:2b"
           microk8s kubectl exec -n gobble deploy/ollama -- sh -lc "ollama list"
 
       - name: Verify deployment
