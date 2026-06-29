@@ -7,6 +7,8 @@ metadata:
     app: ollama
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: ollama
@@ -17,7 +19,7 @@ spec:
     spec:
       containers:
         - name: ollama
-          image: ollama/ollama:rocm
+          image: uberchuckie/ollama-intel-gpu:latest
           ports:
             - containerPort: 11434
           env:
@@ -26,6 +28,10 @@ spec:
                 secretKeyRef:
                   name: gobble-secrets
                   key: ollama_host
+            - name: ONEAPI_DEVICE_SELECTOR
+              value: "level_zero:0"
+            - name: OLLAMA_NUM_PARALLEL
+              value: "1"
           volumeMounts:
             - mountPath: /root/.ollama
               name: models-volume
