@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: ollama
-          image: ollama/ollama:latest
+          image: ollama/ollama:rocm
           ports:
             - containerPort: 11434
           env:
@@ -33,9 +33,13 @@ spec:
             requests:
               cpu: "1"
               memory: "2Gi"
+              gpu.intel.com/i915: "1"
             limits:
               cpu: "2"
-              memory: "3Gi"
+              memory: "4Gi"
+              gpu.intel.com/i915: "1"
+          securityContext:
+            privileged: true
       volumes:
         - name: models-volume
           persistentVolumeClaim:
